@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>内部通道 · 外卖福利聚合</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #0f0f0f; color: #fff; min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            padding: 36px 20px 28px; text-align: center; position: relative; overflow: hidden;
+        }
+        .header::before {
+            content: ''; position: absolute; top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%);
+        }
+        .header h1 { font-size: 22px; font-weight: 700; position: relative; }
+        .header .subtitle { font-size: 13px; color: #8899aa; margin-top: 8px; position: relative; }
+        .container { max-width: 600px; margin: 0 auto; padding: 16px 12px 80px; }
+        .section-title { font-size: 15px; font-weight: 600; margin: 24px 0 12px; color: #ccc; padding-left: 4px; }
+        .card {
+            background: #1a1a2e; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px;
+            padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+            margin-bottom: 8px; transition: all 0.2s;
+        }
+        .card:active { transform: scale(0.98); }
+        .card-icon {
+            width: 44px; height: 44px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; flex-shrink: 0;
+        }
+        .card-info { flex: 1; min-width: 0; }
+        .card-name { font-size: 15px; font-weight: 600; }
+        .card-desc { font-size: 12px; color: #8899aa; margin-top: 2px; }
+        .card-tag {
+            display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 8px;
+            margin-top: 4px; background: rgba(102,126,234,0.15); color: #667eea;
+        }
+        .btn {
+            display: inline-block; padding: 6px 16px; border-radius: 16px;
+            font-size: 12px; font-weight: 600; text-decoration: none; white-space: nowrap;
+        }
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; }
+        .qr-img { width: 44px; height: 44px; border-radius: 6px; cursor: pointer; }
+        .modal {
+            display: none; position: fixed; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.9); z-index: 999; justify-content:center; align-items:center;
+        }
+        .modal.active { display: flex; }
+        .modal img { width: 280px; height: 280px; border-radius: 12px; }
+        .modal .hint { color: #fff; text-align: center; margin-top: 16px; font-size: 14px; }
+        .modal .close {
+            position: fixed; top: 40px; right: 24px; color: #fff; font-size: 32px; cursor: pointer;
+        }
+        .tip-box {
+            background: rgba(102,126,234,0.08); border: 1px solid rgba(102,126,234,0.15);
+            border-radius: 12px; padding: 16px; text-align: center; margin-top: 24px;
+        }
+        .tip-box p { font-size: 13px; color: #8899aa; line-height: 1.6; }
+        .footer { text-align: center; padding: 24px; color: #333; font-size: 11px; }
+        .footer a { color: #667eea; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🥡 外卖福利聚合</h1>
+    <p class="subtitle">全平台霸王餐 · 点外卖前先来这里看看</p>
+</div>
+
+<div class="container">
+    <div class="section-title">🔥 核心霸王餐</div>
+    <div id="mainList"></div>
+    <div class="section-title">📦 返利聚合</div>
+    <div id="rebateList"></div>
+    <div class="tip-box">
+        <p>💡 点外卖前花30秒看看这些平台<br>选最划算的下单，每单省10-20元</p>
+    </div>
+</div>
+
+<div class="modal" id="modal" onclick="closeModal()">
+    <span class="close">&times;</span>
+    <div style="text-align:center">
+        <img id="modalImg" src="">
+        <div class="hint">长按识别小程序码</div>
+    </div>
+</div>
+
+<div class="footer">
+    <p>纯福利聚合 · 无广告</p>
+</div>
+
+<script>
+const data = [
+    {t:'main', n:'小蚕惠生活', d:'200+城市，百万商家', tag:'🔥头部平台', tp:'link', u:'https://wxmpurl.cn/z6Qa65BLfNb', c:'#667eea'},
+    {t:'main', n:'美团反反', d:'美团官方，下单返现+评价返利', tag:'⭐推荐', tp:'qr', u:'qr_codes/美团反反.jpg', c:'#ff6b6b'},
+    {t:'main', n:'小省酱i惠吃', d:'外卖+网购+打车一站式', tag:'全品类', tp:'qr', u:'qr_codes/小惠酱惠吃.jpg', c:'#51cf66'},
+    {t:'main', n:'探探糖', d:'探店社区，低价餐饮券', tag:'探店', tp:'qr', u:'qr_codes/探探糖.jpg', c:'#f06595'},
+    {t:'main', n:'歪麦霸王餐', d:'简洁好用的霸王餐平台', tag:'霸王餐', tp:'qr', u:'qr_codes/歪麦.jpg', c:'#845ef7'},
+    {t:'main', n:'乖饭霸王餐', d:'区域活跃，力度不错', tag:'区域', tp:'qr', u:'qr_codes/乖饭.jpg', c:'#20c997'},
+    {t:'main', n:'餐大大', d:'到店+外卖都有活动', tag:'到店+外卖', tp:'qr', u:'qr_codes/餐大大.jpg', c:'#fab005'},
+    {t:'main', n:'饭否霸王餐', d:'社区互动型霸王餐', tag:'社区', tp:'link', u:'https://wxmpurl.cn/NU5cDuUzGCk', c:'#e67700'},
+    {t:'rebate', n:'高省', d:'99.99%返利，外卖+电商+加油', tag:'综合返利', tp:'link', u:'https://kzurl09.cn/tGcM0Y', c:'#1098ad'},
+    {t:'rebate', n:'氧惠', d:'美妆穿搭+外卖返利', tag:'女性优选', tp:'link', u:'https://kzurl17.cn/tGcM1J', c:'#e64980'},
+    {t:'rebate', n:'淘客鸟联盟', d:'零门槛，100%官方佣金', tag:'零门槛', tp:'qr', u:'qr_codes/淘客鸟.jpg', c:'#495057'},
+];
+const icons = ['🥡','🛡️','💰','🎯','🔥','⭐','🍜','🏪','📱','💎','🛍️'];
+
+function openQR(src) {
+    document.getElementById('modalImg').src = src;
+    document.getElementById('modal').classList.add('active');
+}
+function closeModal() {
+    document.getElementById('modal').classList.remove('active');
+}
+
+function render() {
+    const m = document.getElementById('mainList');
+    const r = document.getElementById('rebateList');
+    data.forEach((p,i) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        const icon = icons[i%icons.length];
+        const isLink = p.tp === 'link';
+        card.innerHTML = `
+            <div class="card-icon" style="background:${p.c}22;color:${p.c}">${icon}</div>
+            <div class="card-info">
+                <div class="card-name">${p.n}</div>
+                <div class="card-desc">${p.d}</div>
+                <span class="card-tag">${p.tag}</span>
+            </div>
+            ${isLink
+                ? `<a href="${p.u}" target="_blank" class="btn btn-primary" rel="noopener">打开</a>`
+                : `<img class="qr-img" src="${p.u}" onclick="event.stopPropagation();openQR('${p.u}')" title="查看二维码">`
+            }
+        `;
+        if (p.t === 'main') m.appendChild(card);
+        else r.appendChild(card);
+    });
+}
+render();
+</script>
+</body>
+</html>
